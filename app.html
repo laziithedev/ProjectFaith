@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Project Faith | Analyzer</title>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-primary: #05050d;
+      --bg-secondary: #0b0b18;
+      --glass-bg: rgba(12, 12, 28, 0.72);
+      --glass-border: rgba(0, 245, 255, 0.12);
+      --glass-border-hover: rgba(0, 245, 255, 0.35);
+      --cyan: #00f5ff;
+      --cyan-dim: rgba(0, 245, 255, 0.15);
+      --cyan-glow: rgba(0, 245, 255, 0.4);
+      --purple: #a855f7;
+      --purple-dim: rgba(168, 85, 247, 0.15);
+      --purple-glow: rgba(168, 85, 247, 0.4);
+      --red: #ff4757;
+      --green: #2ed573;
+      --orange: #ffa502;
+      --text-primary: #e8e8f0;
+      --text-secondary: #8888aa;
+      --text-muted: #4a4a6a;
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      --radius-xl: 28px;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: -apple-system, 'SF Pro Display', 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      overflow-x: hidden;
+    }
+
+    body {
+      background:
+        radial-gradient(ellipse 80% 50% at 20% -10%, rgba(0,245,255,0.06) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 80% 110%, rgba(168,85,247,0.07) 0%, transparent 60%),
+        var(--bg-primary);
+      min-height: 100vh;
+    }
+
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--text-muted); border-radius: 99px; }
+
+    /* ── HEADER ── */
+    .header {
+      position: sticky;
+      top: 0; z-index: 100;
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      background: rgba(5, 5, 13, 0.85);
+      border-bottom: 1px solid var(--glass-border);
+      padding: 0 32px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .header-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+    }
+
+    .header-icon {
+      width: 36px; height: 36px;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden;
+      filter: drop-shadow(0 0 8px rgba(0,245,255,0.45));
+    }
+
+    .header-title {
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      background: linear-gradient(90deg, var(--cyan) 0%, #7dd3fc 50%, var(--purple) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .header-back {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border: 1px solid var(--glass-border);
+      border-radius: 99px;
+      transition: color 0.2s, border-color 0.2s;
+    }
+
+    .header-back:hover {
+      color: var(--cyan);
+      border-color: rgba(0,245,255,0.35);
+    }
+
+    /* ── GRADIENT MENU ── */
+    .gradient-menu-wrap {
+      display: flex;
+      justify-content: center;
+      padding: 28px 16px 8px;
+    }
+
+    .gradient-menu {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      list-style: none;
+      padding: 0; margin: 0;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .gradient-menu-item {
+      position: relative;
+      width: 56px; height: 56px;
+      background: #fff;
+      box-shadow: 0 4px 18px rgba(0,0,0,0.22);
+      border-radius: 99px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      overflow: hidden;
+      border: none;
+      padding: 0;
+      font-family: inherit;
+      transition: width 0.45s cubic-bezier(0.4,0,0.2,1), box-shadow 0.45s;
+    }
+
+    .gradient-menu-item:hover,
+    .gradient-menu-item.gm-active { width: 150px; box-shadow: none; }
+
+    .gradient-menu-bg {
+      position: absolute; inset: 0;
+      border-radius: inherit;
+      opacity: 0;
+      transition: opacity 0.45s;
+    }
+
+    .gradient-menu-item:hover .gradient-menu-bg,
+    .gradient-menu-item.gm-active .gradient-menu-bg { opacity: 1; }
+
+    .gradient-menu-glow {
+      position: absolute;
+      top: 10px; left: 0; right: 0;
+      height: 100%;
+      border-radius: inherit;
+      filter: blur(15px);
+      opacity: 0; z-index: -1;
+      transition: opacity 0.45s;
+      pointer-events: none;
+    }
+
+    .gradient-menu-item:hover .gradient-menu-glow,
+    .gradient-menu-item.gm-active .gradient-menu-glow { opacity: 0.5; }
+
+    .gradient-menu-icon {
+      position: relative; z-index: 10;
+      display: flex; align-items: center; justify-content: center;
+      color: #6b7280;
+      transition: transform 0.35s, opacity 0.25s;
+      flex-shrink: 0;
+    }
+
+    .gradient-menu-item:hover .gradient-menu-icon,
+    .gradient-menu-item.gm-active .gradient-menu-icon { transform: scale(0); opacity: 0; }
+
+    .gradient-menu-label {
+      position: absolute;
+      color: #fff;
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+      font-size: 12px; font-weight: 700;
+      font-family: inherit;
+      transform: scale(0); opacity: 0;
+      transition: transform 0.3s 0.12s, opacity 0.3s 0.12s;
+      white-space: nowrap; z-index: 10;
+      pointer-events: none;
+    }
+
+    .gradient-menu-item:hover .gradient-menu-label,
+    .gradient-menu-item.gm-active .gradient-menu-label { transform: scale(1); opacity: 1; }
+
+    /* ── MAIN LAYOUT ── */
+    .main {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 32px 24px 80px;
+    }
+
+    /* ── GLASS CARD ── */
+    .glass-card {
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-xl);
+      backdrop-filter: blur(20px) saturate(160%);
+      -webkit-backdrop-filter: blur(20px) saturate(160%);
+    }
+
+    /* ── UPLOAD ZONE ── */
+    .upload-section { text-align: center; }
+
+    .upload-hero { margin-bottom: 32px; }
+
+    .upload-hero h1 {
+      font-size: 38px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      margin-bottom: 12px;
+    }
+
+    .upload-hero h1 span {
+      background: linear-gradient(90deg, var(--cyan), var(--purple));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .upload-hero p {
+      color: var(--text-secondary);
+      font-size: 16px;
+      line-height: 1.6;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    .drop-zone {
+      border: 2px dashed rgba(0,245,255,0.22);
+      border-radius: var(--radius-xl);
+      padding: 56px 40px;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+      background: linear-gradient(145deg, rgba(0,245,255,0.02), rgba(168,85,247,0.02));
+      position: relative;
+      overflow: hidden;
+    }
+
+    .drop-zone::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 50% 50%, rgba(0,245,255,0.04) 0%, transparent 70%);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .drop-zone:hover::before, .drop-zone.drag-over::before { opacity: 1; }
+
+    .drop-zone:hover, .drop-zone.drag-over {
+      border-color: rgba(0,245,255,0.55);
+      background: linear-gradient(145deg, rgba(0,245,255,0.05), rgba(168,85,247,0.04));
+      box-shadow: 0 0 40px rgba(0,245,255,0.08), inset 0 0 40px rgba(0,245,255,0.03);
+      transform: translateY(-2px);
+    }
+
+    .drop-icon {
+      width: 72px; height: 72px;
+      margin: 0 auto 20px;
+      border-radius: 20px;
+      background: linear-gradient(135deg, var(--cyan-dim), var(--purple-dim));
+      border: 1px solid var(--glass-border-hover);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 32px;
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+
+    .drop-zone:hover .drop-icon { transform: scale(1.08); box-shadow: 0 0 24px var(--cyan-glow); }
+
+    .drop-title { font-size: 18px; font-weight: 700; margin-bottom: 8px; color: var(--text-primary); }
+    .drop-subtitle { color: var(--text-secondary); font-size: 14px; margin-bottom: 24px; }
+
+    .file-type-pills {
+      display: flex; gap: 8px; justify-content: center;
+      flex-wrap: wrap; margin-bottom: 24px;
+    }
+
+    .pill {
+      padding: 5px 14px;
+      border-radius: 99px;
+      font-size: 12px; font-weight: 600;
+      letter-spacing: 0.05em;
+      border: 1px solid;
+    }
+
+    .pill-cyan    { color: var(--cyan);           border-color: rgba(0,245,255,0.3);   background: rgba(0,245,255,0.06); }
+    .pill-purple  { color: var(--purple);          border-color: rgba(168,85,247,0.3);  background: rgba(168,85,247,0.06); }
+    .pill-neutral { color: var(--text-secondary);  border-color: rgba(136,136,170,0.25); background: rgba(136,136,170,0.05); }
+
+    .upload-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 13px 28px;
+      border-radius: 12px;
+      font-size: 15px; font-weight: 700;
+      letter-spacing: 0.02em;
+      cursor: pointer; border: none;
+      transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
+      background: linear-gradient(135deg, var(--cyan) 0%, #0ea5e9 50%, var(--purple) 100%);
+      color: #05050d;
+      box-shadow: 0 4px 24px rgba(0,245,255,0.25);
+    }
+
+    .upload-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(0,245,255,0.38); }
+    .upload-btn:active { transform: translateY(0); }
+
+    .upload-counter {
+      margin-top: 28px; color: var(--text-muted); font-size: 13px;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+
+    .counter-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text-muted); }
+
+    #file-input { display: none; }
+
+    /* ── SCANNING ── */
+    .scan-panel { padding: 64px 40px; text-align: center; position: relative; overflow: hidden; }
+
+    .scan-spinner-wrap { position: relative; width: 120px; height: 120px; margin: 0 auto 32px; }
+
+    .scan-ring {
+      position: absolute; inset: 0;
+      border-radius: 50%;
+      border: 2px solid transparent;
+      animation: spin-ring 1.4s linear infinite;
+    }
+
+    .scan-ring-1 { border-top-color: var(--cyan); border-right-color: var(--cyan); box-shadow: 0 0 16px var(--cyan-glow); }
+    .scan-ring-2 { inset: 12px; border-bottom-color: var(--purple); border-left-color: var(--purple); animation-duration: 1.1s; animation-direction: reverse; box-shadow: inset 0 0 12px var(--purple-glow); }
+    .scan-ring-3 { inset: 24px; border-top-color: rgba(0,245,255,0.5); animation-duration: 0.8s; }
+
+    .scan-icon-center { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 28px; }
+
+    @keyframes spin-ring { to { transform: rotate(360deg); } }
+
+    .scan-title {
+      font-size: 22px; font-weight: 800; margin-bottom: 8px;
+      background: linear-gradient(90deg, var(--cyan), var(--purple));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+
+    .scan-subtitle { color: var(--text-secondary); font-size: 14px; margin-bottom: 32px; }
+
+    .scan-progress-track { height: 3px; background: rgba(255,255,255,0.06); border-radius: 99px; overflow: hidden; max-width: 300px; margin: 0 auto 16px; }
+
+    .scan-progress-fill {
+      height: 100%; border-radius: 99px;
+      background: linear-gradient(90deg, var(--cyan), var(--purple));
+      box-shadow: 0 0 8px var(--cyan-glow);
+      animation: scan-progress 2.2s cubic-bezier(0.4,0,0.2,1) forwards;
+    }
+
+    @keyframes scan-progress { 0% { width: 0%; } 40% { width: 55%; } 70% { width: 75%; } 100% { width: 100%; } }
+
+    .scan-steps { display: flex; flex-direction: column; gap: 8px; max-width: 260px; margin: 0 auto; }
+
+    .scan-step { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--text-muted); transition: color 0.4s; text-align: left; }
+    .scan-step.active { color: var(--cyan); }
+    .scan-step.done   { color: var(--text-secondary); }
+
+    .step-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text-muted); flex-shrink: 0; transition: background 0.4s, box-shadow 0.4s; }
+    .scan-step.active .step-dot { background: var(--cyan); box-shadow: 0 0 8px var(--cyan-glow); animation: pulse-dot 1s ease-in-out infinite; }
+    .scan-step.done   .step-dot { background: var(--green); }
+
+    @keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+    .scanline {
+      position: absolute; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+      box-shadow: 0 0 12px var(--cyan-glow);
+      animation: scanline-move 1.8s ease-in-out infinite;
+      opacity: 0.6;
+    }
+
+    @keyframes scanline-move { 0% { top: 0; opacity: 0; } 10% { opacity: 0.6; } 90% { opacity: 0.6; } 100% { top: 100%; opacity: 0; } }
+
+    /* ── RESULTS ── */
+    .results-panel { padding: 36px; }
+
+    .results-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 32px; gap: 20px; flex-wrap: wrap; }
+
+    .results-verdict { display: flex; align-items: center; gap: 14px; }
+
+    .verdict-badge { padding: 6px 16px; border-radius: 99px; font-size: 12px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; }
+    .verdict-ai    { background: rgba(255,71,87,0.12);  color: var(--red);   border: 1px solid rgba(255,71,87,0.35); box-shadow: 0 0 12px rgba(255,71,87,0.15); }
+    .verdict-human { background: rgba(46,213,115,0.1);  color: var(--green); border: 1px solid rgba(46,213,115,0.3); box-shadow: 0 0 12px rgba(46,213,115,0.15); }
+
+    .verdict-title    { font-size: 26px; font-weight: 800; letter-spacing: -0.02em; }
+    .verdict-subtitle { font-size: 14px; color: var(--text-secondary); margin-top: 2px; }
+
+    .results-timestamp { font-size: 12px; color: var(--text-muted); text-align: right; line-height: 1.6; }
+
+    .results-top-row { display: grid; grid-template-columns: auto 1fr; gap: 28px; margin-bottom: 28px; align-items: center; }
+
+    .gauge-wrap   { display: flex; flex-direction: column; align-items: center; gap: 12px; flex-shrink: 0; }
+    .gauge-label  { font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-secondary); }
+    .gauge-svg    { overflow: visible; }
+    .gauge-track  { fill: none; stroke: rgba(255,255,255,0.06); stroke-width: 8; stroke-linecap: round; }
+    .gauge-fill   { fill: none; stroke-width: 8; stroke-linecap: round; transition: stroke-dashoffset 1.6s cubic-bezier(0.4,0,0.2,1); }
+    .gauge-center-text  { dominant-baseline: middle; text-anchor: middle; font-family: inherit; font-weight: 800; letter-spacing: -0.02em; }
+    .gauge-center-label { dominant-baseline: middle; text-anchor: middle; font-family: inherit; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; fill: var(--text-secondary); }
+
+    .summary-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    .stat-chip { padding: 16px 18px; border-radius: var(--radius-md); background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); transition: border-color 0.2s; }
+    .stat-chip:hover { border-color: var(--glass-border-hover); }
+    .stat-chip-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px; }
+    .stat-chip-value { font-size: 22px; font-weight: 800; letter-spacing: -0.02em; }
+    .stat-chip-sub   { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+
+    .divider { height: 1px; background: linear-gradient(90deg, transparent, var(--glass-border), transparent); margin: 28px 0; }
+
+    .metrics-title { font-size: 13px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 20px; }
+
+    .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+    .metric-card { padding: 18px 20px; border-radius: var(--radius-md); background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.055); transition: all 0.25s; }
+    .metric-card:hover { border-color: var(--glass-border-hover); background: rgba(0,245,255,0.03); transform: translateY(-1px); }
+
+    .metric-top  { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; gap: 8px; }
+    .metric-name { font-size: 13px; font-weight: 700; line-height: 1.3; flex: 1; }
+    .metric-pct  { font-size: 20px; font-weight: 800; letter-spacing: -0.02em; flex-shrink: 0; }
+    .metric-desc { font-size: 11px; color: var(--text-secondary); margin-bottom: 12px; line-height: 1.4; }
+    .metric-bar-track { height: 5px; background: rgba(255,255,255,0.06); border-radius: 99px; overflow: hidden; }
+    .metric-bar-fill  { height: 100%; border-radius: 99px; transition: width 1.4s cubic-bezier(0.4,0,0.2,1); }
+
+    .action-area { margin-top: 32px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
+    .action-info { font-size: 13px; color: var(--text-secondary); line-height: 1.5; }
+    .action-info strong { color: var(--text-primary); }
+
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 13px 26px; border-radius: 12px;
+      font-size: 15px; font-weight: 700; letter-spacing: 0.02em;
+      cursor: pointer; border: none;
+      transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
+      background: linear-gradient(135deg, var(--cyan) 0%, #0ea5e9 50%, var(--purple) 100%);
+      color: #05050d;
+      box-shadow: 0 4px 24px rgba(0,245,255,0.25);
+      white-space: nowrap;
+    }
+
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(0,245,255,0.38); }
+    .btn-primary:active { transform: translateY(0); }
+
+    .footer { text-align: center; margin-top: 56px; padding-bottom: 24px; color: var(--text-muted); font-size: 12px; letter-spacing: 0.05em; }
+    .footer span { background: linear-gradient(90deg, var(--cyan), var(--purple)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+
+    /* ── HEATMAP ── */
+    .heatmap-section { margin-bottom: 28px; }
+    .heatmap-header  { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+    .heatmap-toggle  { display: flex; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); border-radius: 8px; padding: 3px; gap: 2px; }
+    .toggle-btn { padding: 5px 16px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; border: none; background: transparent; color: var(--text-secondary); transition: all 0.2s; letter-spacing: 0.03em; }
+    .toggle-btn.active { background: linear-gradient(135deg, rgba(0,245,255,0.14), rgba(168,85,247,0.14)); color: var(--cyan); border: 1px solid rgba(0,245,255,0.22); }
+    .heatmap-image-wrap { position: relative; border-radius: var(--radius-md); overflow: hidden; border: 1px solid var(--glass-border); background: #000; min-height: 180px; max-height: 400px; display: flex; align-items: center; justify-content: center; }
+    .heatmap-img { width: 100%; max-height: 400px; object-fit: contain; display: block; }
+    .heatmap-placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 180px; color: var(--text-muted); font-size: 14px; gap: 10px; }
+    .heatmap-canvas { position: absolute; inset: 0; width: 100%; height: 100%; mix-blend-mode: screen; animation: fade-in 0.7s ease both; }
+    .hotspot-pin { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 4px; pointer-events: none; animation: fade-in 0.9s ease both; }
+    .hotspot-ring { width: 16px; height: 16px; border-radius: 50%; border: 2px solid; animation: ping-ring 2.2s ease-in-out infinite; }
+    @keyframes ping-ring { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.5); opacity: 0.4; } }
+    .hotspot-label-text { font-size: 10px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; padding: 2px 7px; border-radius: 4px; background: rgba(5,5,13,0.82); white-space: nowrap; }
+    .heatmap-legend { display: flex; align-items: center; gap: 18px; margin-top: 12px; flex-wrap: wrap; }
+    .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary); }
+    .legend-dot  { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+    /* ── ANIMATIONS ── */
+    @keyframes fade-up  { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fade-in  { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes glow-pulse {
+      0%, 100% { box-shadow: 0 0 20px rgba(0,245,255,0.1); }
+      50%       { box-shadow: 0 0 40px rgba(0,245,255,0.22), 0 0 80px rgba(168,85,247,0.1); }
+    }
+
+    .anim-fade-up  { animation: fade-up 0.5s cubic-bezier(0.4,0,0.2,1) both; }
+    .anim-delay-1  { animation-delay: 0.05s; }
+    .anim-delay-2  { animation-delay: 0.10s; }
+    .anim-delay-3  { animation-delay: 0.15s; }
+    .anim-delay-4  { animation-delay: 0.20s; }
+    .glow-pulse    { animation: glow-pulse 3s ease-in-out infinite; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 640px) {
+      .main { padding: 24px 16px 60px; }
+      .upload-hero h1 { font-size: 28px; }
+      .results-top-row { grid-template-columns: 1fr; justify-items: center; }
+      .metrics-grid { grid-template-columns: 1fr; }
+      .summary-stats { grid-template-columns: 1fr 1fr; }
+      .results-panel { padding: 24px 20px; }
+      .results-header { flex-direction: column; }
+      .action-area { flex-direction: column; align-items: stretch; }
+      .btn-primary { justify-content: center; }
+      .gradient-menu-item:hover, .gradient-menu-item.gm-active { width: 130px; }
+      .gradient-menu { gap: 10px; }
+      .heatmap-image-wrap { max-height: 260px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef, useCallback } = React;
+
+    /* ── TAB CONFIG ── */
+    const MENU_TABS = [
+      {
+        id: 'home', title: 'Home', from: '#a955ff', to: '#ea51ff',
+        accept: 'image/*,audio/*,text/*,.pdf,video/*',
+        pills: [
+          { label: 'Image', cls: 'pill-cyan' }, { label: 'Audio', cls: 'pill-purple' },
+          { label: 'Text', cls: 'pill-neutral' }, { label: 'PDF', cls: 'pill-neutral' },
+          { label: 'Video (soon)', cls: 'pill-neutral' },
+        ],
+        icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
+      },
+      {
+        id: 'video', title: 'Video', from: '#56CCF2', to: '#2F80ED',
+        accept: 'video/*',
+        pills: [{ label: 'MP4', cls: 'pill-cyan' }, { label: 'MOV', cls: 'pill-neutral' }, { label: 'WebM', cls: 'pill-neutral' }],
+        icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>,
+      },
+      {
+        id: 'photo', title: 'Photo', from: '#FF9966', to: '#FF5E62',
+        accept: 'image/*',
+        pills: [{ label: 'JPG', cls: 'pill-cyan' }, { label: 'PNG', cls: 'pill-cyan' }, { label: 'WebP', cls: 'pill-neutral' }],
+        icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>,
+      },
+      {
+        id: 'audio', title: 'Audio', from: '#ffa9c6', to: '#f434e2',
+        accept: 'audio/*',
+        pills: [{ label: 'MP3', cls: 'pill-purple' }, { label: 'WAV', cls: 'pill-neutral' }, { label: 'AAC', cls: 'pill-neutral' }],
+        icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>,
+      },
+      {
+        id: 'text', title: 'Text', from: '#80FF72', to: '#7EE8FA',
+        accept: 'text/*,.pdf',
+        pills: [{ label: 'TXT', cls: 'pill-cyan' }, { label: 'PDF', cls: 'pill-neutral' }, { label: 'CSV', cls: 'pill-neutral' }],
+        icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>,
+      },
+    ];
+
+    /* ── DATA ── */
+    const AI_METRICS = [
+      { label: 'Pixel Artifact Detection',    pct: 91, desc: 'GAN fingerprints & tiling artifacts found', color: '#ff4757' },
+      { label: 'Lighting & Shadow Coherence', pct: 78, desc: 'Inconsistent light source vectors detected', color: '#ffa502' },
+      { label: 'Noise Pattern Analysis',      pct: 88, desc: 'Synthetic noise distribution confirmed',     color: '#ff4757' },
+      { label: 'Metadata Verification',       pct: 74, desc: 'Camera EXIF data absent or spoofed',         color: '#ffa502' },
+    ];
+
+    const HUMAN_METRICS = [
+      { label: 'Pixel Artifact Detection',    pct: 9,  desc: 'Natural pixel distribution — no GAN marks', color: '#2ed573' },
+      { label: 'Lighting & Shadow Coherence', pct: 14, desc: 'Physically coherent lighting model',         color: '#2ed573' },
+      { label: 'Noise Pattern Analysis',      pct: 11, desc: 'Organic sensor noise signature present',     color: '#2ed573' },
+      { label: 'Metadata Verification',       pct: 7,  desc: 'Full EXIF metadata chain intact',            color: '#2ed573' },
+    ];
+
+    const SCAN_STEPS = [
+      'Loading file into analysis engine…',
+      'Running deep neural inspection…',
+      'Cross-referencing signature database…',
+      'Compiling confidence scores…',
+    ];
+
+    const AI_HOTSPOTS = [
+      { x: 0.14, y: 0.13, r: 0.19, intensity: 0.88, label: 'GAN Fingerprint' },
+      { x: 0.78, y: 0.20, r: 0.16, intensity: 0.74, label: 'Pixel Artifact' },
+      { x: 0.50, y: 0.52, r: 0.23, intensity: 0.93, label: 'Synthesis Seam' },
+      { x: 0.83, y: 0.80, r: 0.17, intensity: 0.70, label: 'Edge Inconsistency' },
+      { x: 0.27, y: 0.74, r: 0.15, intensity: 0.81, label: 'Noise Anomaly' },
+    ];
+
+    const HUMAN_HOTSPOTS = [
+      { x: 0.32, y: 0.42, r: 0.13, intensity: 0.19, label: 'Compression' },
+      { x: 0.68, y: 0.63, r: 0.11, intensity: 0.13, label: 'Lens Artifact' },
+    ];
+
+    /* ── GRADIENT MENU ── */
+    function GradientMenu({ activeTab, onTabChange }) {
+      return (
+        <div className="gradient-menu-wrap">
+          <ul className="gradient-menu">
+            {MENU_TABS.map(({ id, title, from, to, icon }) => (
+              <li key={id} className={`gradient-menu-item${activeTab === id ? ' gm-active' : ''}`} onClick={() => onTabChange(id)}>
+                <span className="gradient-menu-bg"  style={{ background: `linear-gradient(45deg,${from},${to})` }} />
+                <span className="gradient-menu-glow" style={{ background: `linear-gradient(45deg,${from},${to})` }} />
+                <span className="gradient-menu-icon">{icon}</span>
+                <span className="gradient-menu-label">{title}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      );
+    }
+
+    /* ── CIRCULAR GAUGE ── */
+    function CircularGauge({ pct, isAI }) {
+      const R = 72, C = 2 * Math.PI * R;
+      const color = isAI ? (pct >= 70 ? '#ff4757' : '#ffa502') : '#2ed573';
+      const offset = C - (pct / 100) * C;
+      return (
+        <div className="gauge-wrap">
+          <span className="gauge-label">AI Probability</span>
+          <svg className="gauge-svg" width="180" height="180" viewBox="0 0 180 180">
+            <defs>
+              <filter id="glow-filter" x="-30%" y="-30%" width="160%" height="160%">
+                <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+                <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+              </filter>
+            </defs>
+            <circle cx="90" cy="90" r="86" fill="none" stroke="rgba(255,255,255,0.03)" strokeWidth="1"/>
+            <circle cx="90" cy="90" r={R} className="gauge-track" transform="rotate(-90 90 90)"/>
+            <circle cx="90" cy="90" r={R} className="gauge-fill" stroke={color} filter="url(#glow-filter)" strokeDasharray={`${C} ${C}`} strokeDashoffset={offset} transform="rotate(-90 90 90)" style={{ transition: 'stroke-dashoffset 1.6s cubic-bezier(0.4,0,0.2,1)' }}/>
+            <text x="90" y="83" className="gauge-center-text" fontSize="34" fill={color}>{pct}%</text>
+            <text x="90" y="104" className="gauge-center-label">AI SCORE</text>
+          </svg>
+        </div>
+      );
+    }
+
+    /* ── METRIC CARD ── */
+    function MetricCard({ metric, delay }) {
+      const [filled, setFilled] = useState(false);
+      useEffect(() => { const t = setTimeout(() => setFilled(true), 80 + delay); return () => clearTimeout(t); }, [delay]);
+      return (
+        <div className="metric-card anim-fade-up" style={{ animationDelay: `${0.1 + delay / 1000}s` }}>
+          <div className="metric-top">
+            <span className="metric-name">{metric.label}</span>
+            <span className="metric-pct" style={{ color: metric.color }}>{metric.pct}%</span>
+          </div>
+          <p className="metric-desc">{metric.desc}</p>
+          <div className="metric-bar-track">
+            <div className="metric-bar-fill" style={{ width: filled ? `${metric.pct}%` : '0%', background: `linear-gradient(90deg, ${metric.color}99, ${metric.color})`, boxShadow: `0 0 6px ${metric.color}55` }}/>
+          </div>
+        </div>
+      );
+    }
+
+    /* ── IMAGE HEATMAP ── */
+    function ImageHeatmap({ imageUrl, isAI }) {
+      const canvasRef = useRef(null);
+      const [view, setView] = useState('heatmap');
+      const hotspots = isAI ? AI_HOTSPOTS : HUMAN_HOTSPOTS;
+
+      const drawHeatmap = useCallback(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const W = canvas.offsetWidth || 600, H = canvas.offsetHeight || 360;
+        canvas.width = W; canvas.height = H;
+        ctx.clearRect(0, 0, W, H);
+        hotspots.forEach(({ x, y, r, intensity }) => {
+          const cx = x * W, cy = y * H, radius = r * Math.min(W, H);
+          const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
+          if (isAI) {
+            grad.addColorStop(0,    `rgba(255,40,40,${intensity*0.82})`);
+            grad.addColorStop(0.3,  `rgba(255,120,20,${intensity*0.55})`);
+            grad.addColorStop(0.65, `rgba(255,210,0,${intensity*0.28})`);
+            grad.addColorStop(1,    `rgba(255,210,0,0)`);
+          } else {
+            grad.addColorStop(0,   `rgba(46,213,115,${intensity*0.7})`);
+            grad.addColorStop(0.5, `rgba(0,200,200,${intensity*0.35})`);
+            grad.addColorStop(1,   `rgba(0,200,200,0)`);
+          }
+          ctx.fillStyle = grad;
+          ctx.beginPath(); ctx.arc(cx, cy, radius, 0, Math.PI * 2); ctx.fill();
+        });
+      }, [isAI, hotspots]);
+
+      useEffect(() => { if (view === 'heatmap') requestAnimationFrame(drawHeatmap); }, [view, drawHeatmap]);
+
+      const pinColor = isAI ? '#ff4757' : '#2ed573';
+      return (
+        <div className="heatmap-section anim-fade-up anim-delay-2">
+          <div className="heatmap-header">
+            <p className="metrics-title" style={{ margin: 0 }}>Image Preview &amp; Artifact Heatmap</p>
+            <div className="heatmap-toggle">
+              <button className={`toggle-btn ${view === 'original' ? 'active' : ''}`} onClick={() => setView('original')}>Original</button>
+              <button className={`toggle-btn ${view === 'heatmap'  ? 'active' : ''}`} onClick={() => setView('heatmap')}>Heatmap</button>
+            </div>
+          </div>
+          <div className="heatmap-image-wrap">
+            {imageUrl
+              ? <img src={imageUrl} className="heatmap-img" alt="Analyzed file" />
+              : <div className="heatmap-placeholder"><span style={{ fontSize: '32px' }}>🖼️</span><span>No image preview — non-image file analyzed</span></div>
+            }
+            {view === 'heatmap' && <canvas ref={canvasRef} className="heatmap-canvas" />}
+            {view === 'heatmap' && hotspots.map((h, i) => (
+              <div key={i} className="hotspot-pin" style={{ left: `${h.x*100}%`, top: `${h.y*100}%`, animationDelay: `${i*0.1+0.3}s` }}>
+                <div className="hotspot-ring" style={{ borderColor: pinColor, boxShadow: `0 0 8px ${pinColor}88` }}/>
+                <span className="hotspot-label-text" style={{ color: pinColor, border: `1px solid ${pinColor}44` }}>{h.label}</span>
+              </div>
+            ))}
+          </div>
+          <div className="heatmap-legend">
+            {isAI ? (
+              <>
+                <div className="legend-item"><span className="legend-dot" style={{ background: '#ff4757' }}/>High-risk zone</div>
+                <div className="legend-item"><span className="legend-dot" style={{ background: '#ffa502' }}/>Moderate anomaly</div>
+                <div className="legend-item"><span className="legend-dot" style={{ background: '#ffd700' }}/>Low-confidence region</div>
+              </>
+            ) : (
+              <>
+                <div className="legend-item"><span className="legend-dot" style={{ background: '#2ed573' }}/>Authentic region</div>
+                <div className="legend-item"><span className="legend-dot" style={{ background: '#00f5ff' }}/>Minor compression artifact</div>
+              </>
+            )}
+            <div className="legend-item" style={{ marginLeft: 'auto' }}>
+              <span style={{ color: 'var(--text-muted)', fontSize: '11px' }}>{hotspots.length} region{hotspots.length !== 1 ? 's' : ''} flagged</span>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    /* ── SCAN PANEL ── */
+    function ScanPanel({ filename }) {
+      const [stepIdx, setStepIdx] = useState(0);
+      useEffect(() => {
+        const timers = SCAN_STEPS.map((_, i) => setTimeout(() => setStepIdx(i), i * 550));
+        return () => timers.forEach(clearTimeout);
+      }, []);
+      return (
+        <div className="scan-panel">
+          <div className="scanline"/>
+          <div className="scan-spinner-wrap">
+            <div className="scan-ring scan-ring-1"/><div className="scan-ring scan-ring-2"/><div className="scan-ring scan-ring-3"/>
+            <div className="scan-icon-center">🔍</div>
+          </div>
+          <h2 className="scan-title">Analyzing File</h2>
+          <p className="scan-subtitle">{filename ? `"${filename}"` : 'Processing upload…'}</p>
+          <div className="scan-progress-track"><div className="scan-progress-fill"/></div>
+          <div className="scan-steps">
+            {SCAN_STEPS.map((step, i) => (
+              <div key={i} className={`scan-step ${i < stepIdx ? 'done' : i === stepIdx ? 'active' : ''}`}>
+                <span className="step-dot"/>{step}
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    /* ── RESULTS PANEL ── */
+    function ResultsPanel({ uploadCount, onReset, imageUrl }) {
+      const isAI = uploadCount % 2 === 1;
+      const pct = isAI ? 84 + Math.floor(Math.sin(uploadCount) * 6) : 11 + Math.floor(Math.cos(uploadCount) * 4);
+      const metrics = isAI ? AI_METRICS : HUMAN_METRICS;
+      const now = new Date().toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' });
+      return (
+        <div className="results-panel">
+          <div className="results-header anim-fade-up">
+            <div className="results-verdict">
+              <span className={`verdict-badge ${isAI ? 'verdict-ai' : 'verdict-human'}`}>{isAI ? '⚠ AI Detected' : '✓ Authentic'}</span>
+              <div>
+                <div className="verdict-title" style={{ color: isAI ? '#ff4757' : '#2ed573' }}>{isAI ? 'AI Generated' : 'Human Created'}</div>
+                <div className="verdict-subtitle">Confidence: High · Upload #{uploadCount}</div>
+              </div>
+            </div>
+            <div className="results-timestamp">Analyzed {now}<br/>Engine v3.2.1 · Model FAITH-L</div>
+          </div>
+
+          <div className="results-top-row anim-fade-up anim-delay-1">
+            <CircularGauge pct={pct} isAI={isAI}/>
+            <div className="summary-stats">
+              <div className="stat-chip"><div className="stat-chip-label">Overall Score</div><div className="stat-chip-value" style={{ color: isAI ? '#ff4757' : '#2ed573' }}>{pct}%</div><div className="stat-chip-sub">AI probability</div></div>
+              <div className="stat-chip"><div className="stat-chip-label">Confidence</div><div className="stat-chip-value" style={{ color: '#00f5ff' }}>{isAI ? '97%' : '94%'}</div><div className="stat-chip-sub">Model certainty</div></div>
+              <div className="stat-chip"><div className="stat-chip-label">Risk Level</div><div className="stat-chip-value" style={{ color: isAI ? '#ffa502' : '#2ed573' }}>{isAI ? 'HIGH' : 'LOW'}</div><div className="stat-chip-sub">Threat classification</div></div>
+              <div className="stat-chip"><div className="stat-chip-label">Signals Found</div><div className="stat-chip-value" style={{ color: '#a855f7' }}>{isAI ? '14' : '2'}</div><div className="stat-chip-sub">Detection markers</div></div>
+            </div>
+          </div>
+
+          <div className="divider"/>
+          <ImageHeatmap imageUrl={imageUrl} isAI={isAI}/>
+          <div className="divider"/>
+
+          <div className="anim-fade-up anim-delay-2">
+            <p className="metrics-title">Detailed Signal Breakdown</p>
+            <div className="metrics-grid">
+              {metrics.map((m, i) => <MetricCard key={m.label} metric={m} delay={i * 120}/>)}
+            </div>
+          </div>
+
+          <div className="action-area anim-fade-up anim-delay-3">
+            <div className="action-info">
+              <strong>Analysis complete.</strong> Upload #{uploadCount + 1} will simulate{' '}
+              <strong style={{ color: (uploadCount+1)%2===1 ? '#ff4757' : '#2ed573' }}>
+                {(uploadCount+1)%2===1 ? 'AI Generated' : 'Human Created'}
+              </strong> result.
+            </div>
+            <button className="btn-primary" onClick={onReset}>↺ &nbsp;Analyze Another File</button>
+          </div>
+        </div>
+      );
+    }
+
+    /* ── UPLOAD ZONE ── */
+    function UploadZone({ uploadCount, onUpload, activeTab }) {
+      const [dragOver, setDragOver] = useState(false);
+      const inputRef = useRef(null);
+      const tab = MENU_TABS.find(t => t.id === activeTab) || MENU_TABS[0];
+
+      const handleDrop = useCallback((e) => {
+        e.preventDefault(); setDragOver(false);
+        const file = e.dataTransfer?.files?.[0];
+        onUpload(file || null);
+      }, [onUpload]);
+
+      const handleChange = (e) => {
+        const file = e.target.files?.[0];
+        if (file) onUpload(file);
+        e.target.value = '';
+      };
+
+      const nextIsAI = (uploadCount + 1) % 2 === 1;
+
+      return (
+        <div className="upload-section">
+          <div className="upload-hero anim-fade-up">
+            <h1>Verify What's <span>Real</span></h1>
+            <p>Upload any {tab.title.toLowerCase()} file. Project Faith's multi-modal AI engine delivers forensic-grade authenticity verdicts in seconds.</p>
+          </div>
+
+          <div
+            className={`glass-card drop-zone glow-pulse anim-fade-up anim-delay-1 ${dragOver ? 'drag-over' : ''}`}
+            onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={handleDrop}
+            onClick={() => inputRef.current?.click()}
+          >
+            <div className="drop-icon" style={{ background: 'none', border: 'none', padding: 0 }}>
+              {dragOver
+                ? <span style={{ fontSize: '32px' }}>📂</span>
+                : <img src="logo.png" alt="Project Faith" style={{ width: '56px', height: '56px', objectFit: 'contain', filter: 'drop-shadow(0 0 12px rgba(0,245,255,0.5))' }}/>
+              }
+            </div>
+            <p className="drop-title">{dragOver ? 'Release to Analyze' : 'Drop Your File Here'}</p>
+            <p className="drop-subtitle">or click anywhere in this area to browse</p>
+
+            <div className="file-type-pills">
+              {tab.pills.map(({ label, cls }) => <span key={label} className={`pill ${cls}`}>{label}</span>)}
+            </div>
+
+            <button className="upload-btn" onClick={(e) => { e.stopPropagation(); inputRef.current?.click(); }}>
+              <span>📁</span> Select File to Analyze
+            </button>
+
+            <input id="file-input" ref={inputRef} type="file" accept={tab.accept} onChange={handleChange}/>
+          </div>
+
+          <div className="upload-counter anim-fade-up anim-delay-2">
+            <span className="counter-dot" style={{ background: uploadCount > 0 ? '#2ed573' : '' }}/>
+            {uploadCount === 0
+              ? 'No files analyzed yet — start your first verification'
+              : `${uploadCount} file${uploadCount !== 1 ? 's' : ''} analyzed · Next result: `}
+            {uploadCount > 0 && (
+              <strong style={{ color: nextIsAI ? '#ff4757' : '#2ed573' }}>{nextIsAI ? 'AI Generated' : 'Human Created'}</strong>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    /* ── ROOT APP ── */
+    function App() {
+      const [phase, setPhase] = useState('idle');
+      const [uploadCount, setUploadCount] = useState(0);
+      const [filename, setFilename] = useState('');
+      const [imageUrl, setImageUrl] = useState(null);
+      const [activeTab, setActiveTab] = useState(() => {
+        const p = new URLSearchParams(window.location.search);
+        return p.get('tab') || 'home';
+      });
+
+      const handleUpload = (file) => {
+        setFilename(file ? file.name : 'sample_file.jpg');
+        setUploadCount(prev => prev + 1);
+        setPhase('scanning');
+        if (file && file.type.startsWith('image/')) {
+          const reader = new FileReader();
+          reader.onload = (e) => setImageUrl(e.target.result);
+          reader.readAsDataURL(file);
+        } else {
+          setImageUrl(null);
+        }
+        setTimeout(() => setPhase('results'), 2600);
+      };
+
+      const handleReset = () => { setPhase('idle'); setFilename(''); setImageUrl(null); };
+
+      return (
+        <>
+          <header className="header">
+            <a className="header-logo" href="index.html" style={{ textDecoration: 'none' }}>
+              <div className="header-icon">
+                <img src="logo.png" alt="Project Faith" style={{ width: '26px', height: '26px', objectFit: 'contain' }}/>
+              </div>
+              <span className="header-title">Faith &nbsp;|&nbsp; Authentic Verification</span>
+            </a>
+            <a className="header-back" href="index.html">← Home</a>
+          </header>
+
+          <main className="main">
+            {phase === 'idle' && (
+              <>
+                <GradientMenu activeTab={activeTab} onTabChange={setActiveTab}/>
+                <UploadZone uploadCount={uploadCount} onUpload={handleUpload} activeTab={activeTab}/>
+              </>
+            )}
+
+            {phase === 'scanning' && (
+              <div className="glass-card anim-fade-up">
+                <ScanPanel filename={filename}/>
+              </div>
+            )}
+
+            {phase === 'results' && (
+              <div className="glass-card anim-fade-up">
+                <ResultsPanel uploadCount={uploadCount} onReset={handleReset} imageUrl={imageUrl}/>
+              </div>
+            )}
+
+            <footer className="footer">
+              <span>Project Faith</span> · Forensic AI Detection Engine ·
+              All analysis performed client-side. No data is uploaded to external servers.
+            </footer>
+          </main>
+        </>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>

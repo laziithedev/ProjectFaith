@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Project Faith | Authentic Verification</title>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-primary: #05050d;
+      --glass-border: rgba(0, 245, 255, 0.12);
+      --cyan: #00f5ff;
+      --cyan-glow: rgba(0, 245, 255, 0.4);
+      --purple: #a855f7;
+      --text-primary: #e8e8f0;
+      --text-secondary: #8888aa;
+      --text-muted: #4a4a6a;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: -apple-system, 'SF Pro Display', 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      overflow-x: hidden;
+    }
+
+    body {
+      background:
+        radial-gradient(ellipse 80% 50% at 20% -10%, rgba(0,245,255,0.06) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 80% 110%, rgba(168,85,247,0.07) 0%, transparent 60%),
+        var(--bg-primary);
+      min-height: 100vh;
+    }
+
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--text-muted); border-radius: 99px; }
+
+    /* ── HEADER ── */
+    .header {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      background: rgba(5, 5, 13, 0.85);
+      border-bottom: 1px solid var(--glass-border);
+      padding: 0 32px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .header-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+    }
+
+    .header-icon {
+      width: 36px; height: 36px;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden;
+      filter: drop-shadow(0 0 8px rgba(0,245,255,0.45));
+    }
+
+    .header-title {
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      background: linear-gradient(90deg, var(--cyan) 0%, #7dd3fc 50%, var(--purple) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .header-badge {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      padding: 4px 12px;
+      border: 1px solid var(--glass-border);
+      border-radius: 99px;
+    }
+
+    /* ── HERO ── */
+    .hero-section {
+      position: relative;
+      width: 100%;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .hero-canvas {
+      position: absolute;
+      inset: 0;
+      background: #000;
+      overflow: hidden;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 10;
+      text-align: center;
+      padding: 0 24px;
+      pointer-events: none;
+    }
+
+    .hero-eyebrow {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: rgba(0,245,255,0.75);
+      margin-bottom: 20px;
+    }
+
+    .hero-title {
+      font-size: clamp(52px, 9vw, 100px);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.05;
+      color: #fff;
+      margin-bottom: 24px;
+      text-shadow: 0 0 80px rgba(0,245,255,0.2);
+    }
+
+    .hero-title span {
+      background: linear-gradient(90deg, var(--cyan), var(--purple));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-subtitle {
+      font-size: 18px;
+      color: rgba(255,255,255,0.52);
+      max-width: 460px;
+      line-height: 1.65;
+      margin: 0 auto;
+    }
+
+    .hero-fade {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 200px;
+      background: linear-gradient(to bottom, transparent, var(--bg-primary));
+      pointer-events: none;
+      z-index: 5;
+    }
+
+    .hero-scroll-hint {
+      position: absolute;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      color: rgba(255,255,255,0.28);
+      font-size: 11px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      pointer-events: none;
+      animation: scroll-bounce 2.6s ease-in-out infinite;
+    }
+
+    @keyframes scroll-bounce {
+      0%, 100% { transform: translateX(-50%) translateY(0); opacity: 0.3; }
+      50%       { transform: translateX(-50%) translateY(8px); opacity: 0.65; }
+    }
+
+    /* ── TAB SECTION ── */
+    .tab-section {
+      padding: 100px 24px 120px;
+      text-align: center;
+      max-width: 700px;
+      margin: 0 auto;
+    }
+
+    .tab-eyebrow {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      margin-bottom: 16px;
+    }
+
+    .tab-title {
+      font-size: clamp(28px, 4vw, 44px);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      margin-bottom: 14px;
+    }
+
+    .tab-title span {
+      background: linear-gradient(90deg, var(--cyan), var(--purple));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .tab-sub {
+      font-size: 16px;
+      color: var(--text-secondary);
+      max-width: 440px;
+      margin: 0 auto 52px;
+      line-height: 1.65;
+    }
+
+    .tab-hint {
+      margin-top: 36px;
+      font-size: 13px;
+      color: var(--text-muted);
+      letter-spacing: 0.04em;
+    }
+
+    /* ── HOVER BUTTON ── */
+    .hover-btn {
+      position: relative;
+      padding: 13px 36px;
+      border-radius: 99px;
+      font-size: 15px;
+      font-weight: 700;
+      font-family: inherit;
+      letter-spacing: 0.02em;
+      color: var(--text-primary);
+      cursor: pointer;
+      overflow: hidden;
+      border: none;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      background: rgba(43, 55, 80, 0.18);
+      transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .hover-btn::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      pointer-events: none;
+      z-index: 1;
+      box-shadow:
+        inset 0 0 0 1px rgba(170,202,255,0.25),
+        inset 0 0 16px 0 rgba(170,202,255,0.12),
+        inset 0 -3px 12px 0 rgba(170,202,255,0.16),
+        0 1px 3px 0 rgba(0,0,0,0.5),
+        0 4px 16px 0 rgba(0,0,0,0.45);
+      transition: transform 0.3s;
+    }
+
+    .hover-btn:active::before { transform: scale(0.975); }
+
+    .hover-btn-inner { position: relative; z-index: 2; pointer-events: none; }
+
+    .hover-btn-circle {
+      position: absolute;
+      width: 12px; height: 12px;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      filter: blur(12px);
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .hover-btn-circle.fade-in  { opacity: 0.75; }
+    .hover-btn-circle.fade-out { opacity: 0; transition-duration: 1.2s; }
+
+    /* ── GRADIENT MENU ── */
+    .gradient-menu-wrap {
+      display: flex;
+      justify-content: center;
+    }
+
+    .gradient-menu {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      list-style: none;
+      padding: 0; margin: 0;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .gradient-menu-item {
+      position: relative;
+      width: 56px; height: 56px;
+      background: #fff;
+      box-shadow: 0 4px 18px rgba(0,0,0,0.22);
+      border-radius: 99px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      overflow: hidden;
+      border: none;
+      padding: 0;
+      font-family: inherit;
+      transition: width 0.45s cubic-bezier(0.4,0,0.2,1), box-shadow 0.45s;
+    }
+
+    .gradient-menu-item:hover { width: 150px; box-shadow: none; }
+
+    .gradient-menu-bg {
+      position: absolute; inset: 0;
+      border-radius: inherit;
+      opacity: 0;
+      transition: opacity 0.45s;
+    }
+
+    .gradient-menu-item:hover .gradient-menu-bg { opacity: 1; }
+
+    .gradient-menu-glow {
+      position: absolute;
+      top: 10px; left: 0; right: 0;
+      height: 100%;
+      border-radius: inherit;
+      filter: blur(15px);
+      opacity: 0;
+      z-index: -1;
+      transition: opacity 0.45s;
+      pointer-events: none;
+    }
+
+    .gradient-menu-item:hover .gradient-menu-glow { opacity: 0.5; }
+
+    .gradient-menu-icon {
+      position: relative; z-index: 10;
+      display: flex; align-items: center; justify-content: center;
+      color: #6b7280;
+      transition: transform 0.35s, opacity 0.25s;
+      flex-shrink: 0;
+    }
+
+    .gradient-menu-item:hover .gradient-menu-icon { transform: scale(0); opacity: 0; }
+
+    .gradient-menu-label {
+      position: absolute;
+      color: #fff;
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+      font-size: 12px;
+      font-weight: 700;
+      font-family: inherit;
+      transform: scale(0);
+      opacity: 0;
+      transition: transform 0.3s 0.12s, opacity 0.3s 0.12s;
+      white-space: nowrap;
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    .gradient-menu-item:hover .gradient-menu-label { transform: scale(1); opacity: 1; }
+
+    /* ── ANIMATIONS ── */
+    @keyframes fade-up {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .anim-fade-up   { animation: fade-up 0.5s cubic-bezier(0.4,0,0.2,1) both; }
+    .anim-delay-1   { animation-delay: 0.05s; }
+    .anim-delay-2   { animation-delay: 0.10s; }
+    .anim-delay-3   { animation-delay: 0.15s; }
+    .anim-delay-4   { animation-delay: 0.20s; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 640px) {
+      .header-badge { display: none; }
+      .hero-subtitle { font-size: 16px; }
+      .gradient-menu-item:hover { width: 130px; }
+      .gradient-menu { gap: 10px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef, useCallback } = React;
+
+    /* ── TAB DEFINITIONS ── */
+    const TABS = [
+      {
+        id: 'home', title: 'Home', from: '#a955ff', to: '#ea51ff',
+        icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
+      },
+      {
+        id: 'video', title: 'Video', from: '#56CCF2', to: '#2F80ED',
+        icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>,
+      },
+      {
+        id: 'photo', title: 'Photo', from: '#FF9966', to: '#FF5E62',
+        icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>,
+      },
+      {
+        id: 'audio', title: 'Audio', from: '#ffa9c6', to: '#f434e2',
+        icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>,
+      },
+      {
+        id: 'text', title: 'Text', from: '#80FF72', to: '#7EE8FA',
+        icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>,
+      },
+    ];
+
+    /* ── HOVER BUTTON ── */
+    function HoverButton({ children, onClick, style }) {
+      const btnRef = useRef(null);
+      const [listening, setListening] = useState(false);
+      const [circles, setCircles] = useState([]);
+      const lastRef = useRef(0);
+
+      const addCircle = useCallback((x, y) => {
+        const w = btnRef.current?.offsetWidth || 1;
+        const color = `linear-gradient(to right, #a0d9f8 ${(x/w)*100}%, #3a5bbf ${(x/w)*100}%)`;
+        setCircles(p => [...p, { id: Date.now() + Math.random(), x, y, color, fade: null }]);
+      }, []);
+
+      const onMove = useCallback((e) => {
+        if (!listening) return;
+        const now = Date.now();
+        if (now - lastRef.current > 100) {
+          lastRef.current = now;
+          const r = e.currentTarget.getBoundingClientRect();
+          addCircle(e.clientX - r.left, e.clientY - r.top);
+        }
+      }, [listening, addCircle]);
+
+      useEffect(() => {
+        circles.forEach(c => {
+          if (!c.fade) {
+            setTimeout(() => setCircles(p => p.map(x => x.id === c.id ? { ...x, fade: 'in' }  : x)), 0);
+            setTimeout(() => setCircles(p => p.map(x => x.id === c.id ? { ...x, fade: 'out' } : x)), 1000);
+            setTimeout(() => setCircles(p => p.filter(x => x.id !== c.id)), 2200);
+          }
+        });
+      }, [circles]);
+
+      return (
+        <button
+          ref={btnRef}
+          className="hover-btn anim-fade-up anim-delay-2"
+          style={style}
+          onClick={onClick}
+          onPointerMove={onMove}
+          onPointerEnter={() => setListening(true)}
+          onPointerLeave={() => setListening(false)}
+        >
+          {circles.map(({ id, x, y, color, fade }) => (
+            <div key={id} className={`hover-btn-circle${fade === 'in' ? ' fade-in' : fade === 'out' ? ' fade-out' : ''}`} style={{ left: x, top: y, background: color }} />
+          ))}
+          <span className="hover-btn-inner">{children}</span>
+        </button>
+      );
+    }
+
+    /* ── SHADER ANIMATION ── */
+    function ShaderAnimation() {
+      const ref = useRef(null);
+
+      useEffect(() => {
+        const el = ref.current;
+        if (!el) return;
+
+        const camera = new THREE.Camera();
+        camera.position.z = 1;
+        const scene = new THREE.Scene();
+        const geo = new THREE.PlaneGeometry(2, 2);
+        const uniforms = { time: { value: 1.0 }, resolution: { value: new THREE.Vector2() } };
+
+        const mat = new THREE.ShaderMaterial({
+          uniforms,
+          vertexShader: `void main() { gl_Position = vec4(position, 1.0); }`,
+          fragmentShader: `
+            precision highp float;
+            uniform vec2 resolution;
+            uniform float time;
+            void main(void) {
+              vec2 uv = (gl_FragCoord.xy * 2.0 - resolution.xy) / min(resolution.x, resolution.y);
+              float t = time * 0.05;
+              vec3 color = vec3(0.0);
+              for(int j = 0; j < 3; j++)
+                for(int i = 0; i < 5; i++)
+                  color[j] += 0.002 * float(i*i) / abs(fract(t - 0.01*float(j) + float(i)*0.01)*5.0 - length(uv) + mod(uv.x + uv.y, 0.2));
+              gl_FragColor = vec4(color, 1.0);
+            }
+          `,
+        });
+
+        scene.add(new THREE.Mesh(geo, mat));
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setPixelRatio(window.devicePixelRatio);
+        el.appendChild(renderer.domElement);
+
+        const onResize = () => {
+          renderer.setSize(el.clientWidth, el.clientHeight);
+          uniforms.resolution.value.set(renderer.domElement.width, renderer.domElement.height);
+        };
+        onResize();
+        window.addEventListener('resize', onResize, false);
+
+        let raf;
+        const tick = () => { raf = requestAnimationFrame(tick); uniforms.time.value += 0.05; renderer.render(scene, camera); };
+        tick();
+
+        return () => {
+          window.removeEventListener('resize', onResize);
+          cancelAnimationFrame(raf);
+          if (renderer.domElement.parentNode === el) el.removeChild(renderer.domElement);
+          renderer.dispose(); geo.dispose(); mat.dispose();
+        };
+      }, []);
+
+      return <div ref={ref} className="hero-canvas" />;
+    }
+
+    /* ── HERO SECTION ── */
+    function HeroSection() {
+      const scroll = () => document.getElementById('choose').scrollIntoView({ behavior: 'smooth' });
+
+      return (
+        <div className="hero-section">
+          <ShaderAnimation />
+          <div className="hero-content anim-fade-up">
+            <p className="hero-eyebrow">Forensic AI Detection Engine</p>
+            <h1 className="hero-title">Project <span>Faith</span></h1>
+            <p className="hero-subtitle">
+              Upload any file. Receive a forensic-grade verdict in seconds.<br />Know what's real.
+            </p>
+          </div>
+          <HoverButton onClick={scroll} style={{ marginTop: '36px', position: 'relative', zIndex: 10 }}>
+            Start Analyzing &nbsp;↓
+          </HoverButton>
+          <div className="hero-fade" />
+          <div className="hero-scroll-hint"><span>scroll</span><span>↓</span></div>
+        </div>
+      );
+    }
+
+    /* ── CHOOSE SECTION ── */
+    function ChooseSection() {
+      const go = (id) => { window.location.href = `app.html?tab=${id}`; };
+
+      return (
+        <section id="choose" className="tab-section">
+          <p className="tab-eyebrow anim-fade-up">Choose Your Content Type</p>
+          <h2 className="tab-title anim-fade-up anim-delay-1">
+            What are you <span>verifying?</span>
+          </h2>
+          <p className="tab-sub anim-fade-up anim-delay-2">
+            Select the media type below. Project Faith's multi-modal engine delivers
+            forensic-grade authenticity verdicts for images, video, audio, and text.
+          </p>
+
+          <div className="gradient-menu-wrap anim-fade-up anim-delay-3">
+            <ul className="gradient-menu">
+              {TABS.map(({ id, title, from, to, icon }) => (
+                <li key={id} className="gradient-menu-item" onClick={() => go(id)}>
+                  <span className="gradient-menu-bg" style={{ background: `linear-gradient(45deg,${from},${to})` }} />
+                  <span className="gradient-menu-glow" style={{ background: `linear-gradient(45deg,${from},${to})` }} />
+                  <span className="gradient-menu-icon">{icon}</span>
+                  <span className="gradient-menu-label">{title}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <p className="tab-hint anim-fade-up anim-delay-4">
+            Hover a category, then click to open the analyzer ↗
+          </p>
+        </section>
+      );
+    }
+
+    /* ── APP ── */
+    function App() {
+      return (
+        <>
+          <header className="header">
+            <a className="header-logo" href="index.html" style={{ textDecoration: 'none' }}>
+              <div className="header-icon">
+                <img src="logo.png" alt="Project Faith" style={{ width: '26px', height: '26px', objectFit: 'contain' }} />
+              </div>
+              <span className="header-title">Faith &nbsp;|&nbsp; Authentic Verification</span>
+            </a>
+            <span className="header-badge">Alpha v2.0.1</span>
+          </header>
+          <HeroSection />
+          <ChooseSection />
+        </>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
